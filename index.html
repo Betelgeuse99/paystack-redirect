@@ -3,25 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Processing</title>
+    <title>Dream Hatcher - Payment Redirect</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            padding: 20px; 
-            text-align: center; 
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .container {
             background: white;
-            padding: 30px;
+            padding: 40px;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             max-width: 400px;
             width: 100%;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
         }
         .spinner {
             border: 4px solid #f3f3f3;
@@ -30,15 +35,36 @@
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 30px auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
+</head>
+<body>
+    <div class="container">
+        <h2>✅ Payment Successful!</h2>
+        <p>Thank you for your payment.</p>
+        <div class="spinner"></div>
+        <p id="status">Redirecting to WiFi login...</p>
+        <p style="margin-top: 30px; font-size: 14px; color: #666;">
+            If you are not redirected in 5 seconds,<br>
+            <a href="http://dreamhatcher.login" id="manual-link">Click here to go to WiFi login</a>
+        </p>
+    </div>
+
     <script>
-        // Capture Paystack parameters
+        // Get Paystack reference from URL
         const urlParams = new URLSearchParams(window.location.search);
         const reference = urlParams.get('reference');
         const trxref = urlParams.get('trxref');
@@ -47,43 +73,40 @@
         // Use any available reference
         const ref = reference || trxref || transaction_id;
         
+        // Debug log
+        console.log('Payment Reference:', ref);
+        
         if (ref) {
-            // Store reference in localStorage for backup
-            localStorage.setItem('payment_ref', ref);
+            // Store in localStorage as backup
+            localStorage.setItem('dreamhatcher_ref', ref);
             
-            // Redirect to your Render backend (desktop) or direct to hotspot (mobile)
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            // Create hotspot URL
+            const hotspotUrl = `http://dreamhatcher.login/payment-processing.html?ref=${ref}`;
             
-            if (isMobile) {
-                // Mobile: Redirect directly to hotspot page
-                setTimeout(() => {
-                    window.location.href = `http://dreamhatcher.login/payment-processing.html?ref=${ref}`;
-                }, 1000);
-            } else {
-                // Desktop: Redirect to Render
-                setTimeout(() => {
-                    window.location.href = `https://dreamhatcher-backend.onrender.com/success?reference=${ref}`;
-                }, 1000);
-            }
+            // Update status
+            document.getElementById('status').textContent = 'Redirecting with reference: ' + ref;
+            
+            // Redirect to hotspot page
+            setTimeout(() => {
+                window.location.href = hotspotUrl;
+            }, 2000);
+            
+            // Update manual link
+            document.getElementById('manual-link').href = hotspotUrl;
+            
         } else {
-            // If no ref, check localStorage
-            const savedRef = localStorage.getItem('payment_ref');
+            // No reference found
+            document.getElementById('status').textContent = 'No payment reference found.';
+            document.getElementById('status').style.color = 'red';
+            
+            // Check localStorage for backup
+            const savedRef = localStorage.getItem('dreamhatcher_ref');
             if (savedRef) {
-                window.location.href = `http://dreamhatcher.login/payment-processing.html?ref=${savedRef}`;
+                const backupUrl = `http://dreamhatcher.login/payment-processing.html?ref=${savedRef}`;
+                document.getElementById('manual-link').href = backupUrl;
+                document.getElementById('status').textContent = 'Using saved reference. Click link above.';
             }
         }
     </script>
-</head>
-<body>
-    <div class="container">
-        <h2>✅ Payment Successful!</h2>
-        <div class="spinner"></div>
-        <p>Processing your payment...</p>
-        <p><small>Redirecting to WiFi login...</small></p>
-        <p style="margin-top: 20px; font-size: 12px; color: #666;">
-            If not redirected in 5 seconds,<br>
-            <a href="http://dreamhatcher.login" style="color: #667eea;">Click here to go to WiFi login</a>
-        </p>
-    </div>
 </body>
 </html>
