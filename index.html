@@ -3,110 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dream Hatcher - Payment Redirect</title>
+    <title>Dream Hatcher WiFi - Payment Complete</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
-            text-align: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #1a1a2e;
+            color: white;
             min-height: 100vh;
-            margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         .container {
-            background: white;
-            padding: 40px;
+            background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+            padding: 30px;
             border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
             max-width: 400px;
             width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        h2 {
-            color: #333;
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
             margin-bottom: 20px;
+            color: #00c9ff;
+        }
+        .status-box {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #00c9ff;
         }
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid #00c9ff;
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 30px auto;
+            margin: 20px auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        a {
-            color: #667eea;
-            text-decoration: none;
+        .btn {
+            background: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 16px;
             font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.3s;
         }
-        a:hover {
-            text-decoration: underline;
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .manual-link {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .manual-link a {
+            color: #00c9ff;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>✅ Payment Successful!</h2>
-        <p>Thank you for your payment.</p>
-        <div class="spinner"></div>
-        <p id="status">Redirecting to WiFi login...</p>
-        <p style="margin-top: 30px; font-size: 14px; color: #666;">
-            If you are not redirected in 5 seconds,<br>
-            <a href="http://dreamhatcher.login" id="manual-link">Click here to go to WiFi login</a>
-        </p>
+        <div class="logo">🌐 Dream Hatcher Tech</div>
+        <h2>✅ Payment Verified</h2>
+        
+        <div class="status-box">
+            <div class="spinner"></div>
+            <p id="status-text">Opening WiFi portal...</p>
+            <p id="reference" style="font-size: 12px; margin-top: 10px; word-break: break-all;"></p>
+        </div>
+        
+        <div id="manual-section" style="display: none;">
+            <p>If automatic redirect failed:</p>
+            <button class="btn" id="manual-btn">Click Here to Open WiFi</button>
+            <p style="font-size: 12px; margin-top: 15px; color: #aaa;">
+                Or manually go to:<br>
+                <strong>http://192.168.88.1</strong><br>
+                and enter credentials when ready
+            </p>
+        </div>
+        
+        <div class="manual-link">
+            Support: 07037412314<br>
+            <span id="timer">Auto-redirect in: 3</span>
+        </div>
     </div>
 
     <script>
-        // Get Paystack reference from URL
+        // Get payment reference
         const urlParams = new URLSearchParams(window.location.search);
-        const reference = urlParams.get('reference');
-        const trxref = urlParams.get('trxref');
-        const transaction_id = urlParams.get('transaction_id');
+        const reference = urlParams.get('reference') || urlParams.get('trxref') || urlParams.get('transaction_id');
         
-        // Use any available reference
-        const ref = reference || trxref || transaction_id;
+        // Router IP addresses (CHANGE THESE TO YOUR ROUTER'S IP)
+        const routerIps = [
+            '192.168.88.1',    // Mikrotik default
+            '10.0.0.1',        // Common alternative
+            '192.168.1.1'      // Another common
+        ];
         
-        // Debug log
-        console.log('Payment Reference:', ref);
-        
-        if (ref) {
-            // Store in localStorage as backup
-            localStorage.setItem('dreamhatcher_ref', ref);
-            
-            // Create hotspot URL
-            const hotspotUrl = `http://dreamhatcher.login/payment-processing.html?ref=${ref}`;
-            
-            // Update status
-            document.getElementById('status').textContent = 'Redirecting with reference: ' + ref;
-            
-            // Redirect to hotspot page
-            setTimeout(() => {
-                window.location.href = hotspotUrl;
-            }, 2000);
-            
-            // Update manual link
-            document.getElementById('manual-link').href = hotspotUrl;
-            
-        } else {
-            // No reference found
-            document.getElementById('status').textContent = 'No payment reference found.';
-            document.getElementById('status').style.color = 'red';
-            
-            // Check localStorage for backup
-            const savedRef = localStorage.getItem('dreamhatcher_ref');
-            if (savedRef) {
-                const backupUrl = `http://dreamhatcher.login/payment-processing.html?ref=${savedRef}`;
-                document.getElementById('manual-link').href = backupUrl;
-                document.getElementById('status').textContent = 'Using saved reference. Click link above.';
-            }
+        // Store reference for backup
+        if (reference) {
+            localStorage.setItem('pay_ref', reference);
+            document.getElementById('reference').textContent = 'Ref: ' + reference.substring(0, 20) + '...';
         }
+        
+        // Timer countdown
+        let countdown = 3;
+        const timerElement = document.getElementById('timer');
+        const timerInterval = setInterval(() => {
+            countdown--;
+            timerElement.textContent = 'Auto-redirect in: ' + countdown;
+            if (countdown <= 0) {
+                clearInterval(timerInterval);
+                attemptRedirect();
+            }
+        }, 1000);
+        
+        function attemptRedirect() {
+            const ref = reference || localStorage.getItem('pay_ref') || '';
+            const refParam = ref ? '?ref=' + encodeURIComponent(ref) : '';
+            
+            // Try multiple router IPs
+            let currentIpIndex = 0;
+            
+            function tryNextIp() {
+                if (currentIpIndex >= routerIps.length) {
+                    // All IPs failed, show manual option
+                    document.getElementById('status-text').textContent = '⚠️ Could not connect automatically';
+                    document.getElementById('manual-section').style.display = 'block';
+                    return;
+                }
+                
+                const routerIp = routerIps[currentIpIndex];
+                const hotspotUrl = `http://${routerIp}/payment-processing.html${refParam}`;
+                
+                document.getElementById('status-text').textContent = `Trying ${routerIp}...`;
+                
+                // Test if router is reachable
+                const testImage = new Image();
+                testImage.onload = function() {
+                    // Router is reachable, redirect
+                    window.location.href = hotspotUrl;
+                };
+                testImage.onerror = function() {
+                    // This IP failed, try next
+                    currentIpIndex++;
+                    setTimeout(tryNextIp, 1000);
+                };
+                
+                // Try to load a small image from router (logo.png or any existing file)
+                testImage.src = `http://${routerIp}/logo.png?t=${Date.now()}`;
+                testImage.style.display = 'none';
+            }
+            
+            tryNextIp();
+        }
+        
+        // Manual button click
+        document.getElementById('manual-btn')?.addEventListener('click', function() {
+            const ref = reference || localStorage.getItem('pay_ref') || '';
+            const refParam = ref ? '?ref=' + encodeURIComponent(ref) : '';
+            
+            // Try first IP
+            window.open(`http://${routerIps[0]}/payment-processing.html${refParam}`, '_blank');
+            
+            // Also try to redirect current tab
+            setTimeout(() => {
+                window.location.href = `http://${routerIps[0]}/payment-processing.html${refParam}`;
+            }, 100);
+        });
+        
+        // Auto-attempt redirect after 1 second (fallback)
+        setTimeout(attemptRedirect, 1000);
     </script>
 </body>
 </html>
